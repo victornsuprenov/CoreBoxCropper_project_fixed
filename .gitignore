@@ -14,9 +14,6 @@ ENV/
 .vscode/
 *.swp
 .ipynb_checkpoints/
-runs/
-*.pt
-*.onnx
 *.pth
 *.ckpt
 *.log
