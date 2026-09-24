@@ -1,0 +1,4 @@
+{
+  "v3_enabled": true,
+  "v3_keypoint_model": "C:/Users/victornsuprenov/Desktop/CoreBoxCropper_project_fixed/runs/pose/corebox_keypoints_v2/weights/best.onnx"
+}

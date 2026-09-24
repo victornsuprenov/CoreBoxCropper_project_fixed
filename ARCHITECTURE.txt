@@ -1,0 +1,247 @@
+CoreBoxCropper — архитектура
+============================
+
+Назначение
+----------
+Windows-приложение для автоматического выбора одного 3-ячеечного ящика с
+керном и связанной геологической линейки на типовых фотографиях.
+
+Главная идея новой версии detector
+-----------------------------------
+Не искать «самый большой прямоугольник».
+
+Сначала ищется глобальный устойчивый якорь фотографии — цветная калибровочная
+шкала на геологической линейке. После этого поиск ящика ограничивается областью
+непосредственно перед линейкой.
+
+Pipeline:
+
+IMAGE
+  |
+  +--> EXIF normalization
+  |
+  +--> Color-scale detector
+  |       |
+  |       +--> ruler position
+  |
+  +--> Vertical rail profile
+  |       |
+  |       +--> 4 rails
+  |       +--> 3 cells
+  |       +--> spacing regularity
+  |       +--> box aspect ratio
+  |       +--> ruler attachment
+  |
+  +--> FINAL ROI = box + full ruler
+  |
+  +--> crop original resolution
+
+Это значительно лучше соответствует реальным фотографиям проекта, где рядом
+находятся несколько похожих ящиков.
+
+Файлы
+-----
+
+main.py
+    Точка входа.
+
+coreboxcropper/application.py
+    ApplicationService.
+    Общий слой для GUI, CLI и массовой обработки.
+    Загружает изображения с EXIF correction, запускает detector и processor.
+
+coreboxcropper/detector.py
+    Основной BoxDetector.
+    - ищет цветную шкалу через RulerDetector;
+    - строит вертикальный gradient profile;
+    - ищет группы из четырёх rails;
+    - требует ровно три ячейки;
+    - оценивает регулярность расстояний;
+    - оценивает aspect ratio;
+    - оценивает близость к линейке;
+    - формирует final ROI.
+
+coreboxcropper/ruler_detector.py
+    Глобальный RulerDetector.
+    - HSV color-scale detection;
+    - hue diversity;
+    - поиск двух длинных границ линейки;
+    - оценка регулярности делений;
+    - сохранение совместимости со старыми calibration tests.
+
+coreboxcropper/models.py
+    DetectionResult, RulerDetection, ProcessResult.
+
+coreboxcropper/geometry.py
+    Геометрические операции, bbox, ROI, perspective helpers.
+
+coreboxcropper/processor.py
+    Финальный crop и сохранение JPEG/PNG/WEBP.
+
+coreboxcropper/config.py
+    Настройки алгоритма и их сохранение в:
+    %LOCALAPPDATA%\CoreBoxCropper\config.json
+
+coreboxcropper/ui/app.py
+    Tkinter GUI.
+    - выбор папки;
+    - выбор нескольких файлов;
+    - массовая обработка;
+    - прогресс;
+    - предпросмотр;
+    - ручная коррекция.
+
+coreboxcropper/cli.py
+    CLI, JSON и exit codes.
+
+coreboxcropper/logger.py
+    Логи и debug directory.
+
+Параметры detector
+-------------------
+
+max_analysis_dimension
+    По умолчанию 5000. Для типовых фотографий 4K анализ выполняется практически
+    в исходном разрешении, чтобы не терять узкие деревянные границы.
+
+expected_core_cells
+    По умолчанию 3. Ключевой признак целевого ящика.
+
+expected_box_aspect_ratio
+    Ожидаемое отношение высоты к ширине целевого 3-ячеечного ящика.
+
+box_aspect_tolerance
+    Допустимое отклонение aspect ratio.
+
+crop_margin_percent
+    Небольшой внешний запас итогового crop.
+
+ruler_color_min_saturation
+    Порог HSV-насыщенности цветной шкалы.
+
+ruler_tick_step_cm
+    Ожидаемый шаг 10 см.
+
+ruler_length_cm
+    Номинальная длина линейки.
+
+Принцип выбора
+---------------
+
+Кандидат считается хорошим, если одновременно выполняются:
+
+1. есть цветная шкала;
+2. линейка уверенно найдена;
+3. рядом с линейкой находятся четыре продольные границы;
+4. эти границы образуют три ячейки;
+5. расстояния между границами достаточно регулярны;
+6. итоговая геометрия похожа на высокий узкий ящик;
+7. последний rail находится непосредственно перед линейкой.
+
+Главное бизнес-правило:
+
+Лучше вернуть BOX_NOT_CONFIDENT, чем автоматически сохранить неправильный crop.
+
+V3 production pipeline (planned)
+--------------------------------
+
+На этапе V3 мы не отказываемся от существующего YOLO-first flow: он остаётся
+первым стадным detector. Новая часть — это дополнительный ранкинг и quality
+gate после локального ROI refinement.
+
+Pipeline V3:
+
+IMAGE
+    |
+    +--> YOLO candidate search
+    |
+    +--> candidate ranking by confidence + ruler signal + box geometry
+    |
+    +--> local key-point / quad refinement inside selected ROI
+    |
+    +--> quality gate (confidence, aspect ratio, perspective stability)
+    |
+    +--> perspective crop only when the quad passes threshold
+    |
+    +--> final ROI + ruler retention + debug export
+
+В коде это соответствует отдельным слоям:
+
+coreboxcropper/inference/v3_pipeline.py
+        pipeline-level orchestration for the staged V3 detector;
+        keeps a clean boundary between legacy OpenCV and ML-first logic.
+
+coreboxcropper/legacy/
+        compatibility fallback for the historic detector stack and any debugging
+        before the V3 model is trained and validated.
+
+Это позволяет поэтапно выпускать V3: key-point model и ONNX adapter уже
+подключены как opt-in первый этап. Если quality gate не пройден или ONNX
+недоступен, detector продолжает через текущий YOLO-first и legacy fallback.
+До явного включения `v3_enabled` текущий production flow не меняется.
+
+Линейка
+-------
+
+В crop включается вся обнаруженная горизонтальная область линейки по X и
+вертикальный диапазон выбранного ящика по Y.
+
+Это гарантирует сохранение:
+- цветовой шкалы;
+- делений 10 см;
+- цифр;
+- белых бумажек/наклеек.
+
+При этом вертикальное ограничение не позволяет захватывать пол/обувь сверху
+или снизу фотографии.
+
+Массовая обработка
+-------------------
+
+GUI поддерживает:
+- папку;
+- несколько файлов;
+- вложенные папки;
+- последовательную обработку;
+- продолжение после ошибки одного файла.
+
+ApplicationService.process_paths() является общим API batch-режима.
+
+CLI
+---
+
+Один файл:
+    --input INPUT --output OUTPUT
+
+Папка:
+    --input-dir DIR --output-dir DIR
+
+Дополнительно:
+    --recursive
+    --overwrite
+    --debug
+    --json
+    --no-gui
+    --config CONFIG
+
+Тестирование
+------------
+
+В проект включены три реальные фотографии:
+- 826_6001-1...
+- 826_6001-2...
+- 826_6001-3...
+
+Текущая локальная проверка detector на них должна подтверждать:
+- success=True;
+- box_found=True;
+- ruler_found=True.
+
+Ограничения
+-----------
+
+Алгоритм специально оптимизирован под типовые фотографии проекта.
+Это не универсальный detector любых геологических ящиков.
+
+Если условия съёмки существенно изменятся, необходимо добавить фотографии
+в calibration set и при необходимости откалибровать параметры.

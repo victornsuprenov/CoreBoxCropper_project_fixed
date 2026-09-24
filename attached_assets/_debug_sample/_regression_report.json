@@ -1,0 +1,84 @@
+{
+  "source": "C:\\Users\\victornsuprenov\\Desktop\\CoreBoxCropper_project_fixed\\attached_assets\\_debug_sample",
+  "images": 3,
+  "primary_success": 3,
+  "baseline_success": 3,
+  "regressions": 0,
+  "primary_recall": 1.0,
+  "baseline_recall": 1.0,
+  "primary_mean_target_iou": null,
+  "baseline_mean_target_iou": null,
+  "primary_ruler_rate": 1.0,
+  "baseline_ruler_rate": 1.0,
+  "primary_avg_ms": 20475.5,
+  "baseline_avg_ms": 19507.3,
+  "prediction_dir": "_regression\\predictions",
+  "bbox_crop_dir": "_regression\\bbox_crops",
+  "crop_dir": "_regression\\crops",
+  "debug_dir": "_regression\\debug",
+  "rows": [
+    {
+      "image": "826_6001-1_(0.00-3.00)_W_1788890262148.jpg",
+      "prediction_paths": [
+        "_regression\\predictions\\826_6001-1_(0.00-3.00)_W_1788890262148_detected_box.jpg"
+      ],
+      "bbox_path": "_regression\\bbox_crops\\826_6001-1_(0.00-3.00)_W_1788890262148.jpg",
+      "crop_path": "_regression\\crops\\826_6001-1_(0.00-3.00)_W_1788890262148.jpg",
+      "primary_success": true,
+      "primary_confidence": 0.9037,
+      "primary_reason": "three_cell_box_with_ruler",
+      "primary_ruler_found": true,
+      "baseline_success": true,
+      "baseline_confidence": 0.9037,
+      "baseline_reason": "three_cell_box_with_ruler",
+      "baseline_ruler_found": true,
+      "regression": false,
+      "primary_target_iou": null,
+      "baseline_target_iou": null,
+      "primary_ms": 30966.2,
+      "baseline_ms": 27960.1
+    },
+    {
+      "image": "826_6001-2_(3.00-6.00)_W_1788890262148.jpg",
+      "prediction_paths": [
+        "_regression\\predictions\\826_6001-2_(3.00-6.00)_W_1788890262148_detected_box.jpg"
+      ],
+      "bbox_path": "_regression\\bbox_crops\\826_6001-2_(3.00-6.00)_W_1788890262148.jpg",
+      "crop_path": "_regression\\crops\\826_6001-2_(3.00-6.00)_W_1788890262148.jpg",
+      "primary_success": true,
+      "primary_confidence": 0.8594,
+      "primary_reason": "three_cell_box_with_ruler",
+      "primary_ruler_found": true,
+      "baseline_success": true,
+      "baseline_confidence": 0.8594,
+      "baseline_reason": "three_cell_box_with_ruler",
+      "baseline_ruler_found": true,
+      "regression": false,
+      "primary_target_iou": null,
+      "baseline_target_iou": null,
+      "primary_ms": 17996.0,
+      "baseline_ms": 18046.6
+    },
+    {
+      "image": "826_6001-3_(6.00-9.00)_W_1788890262148.jpg",
+      "prediction_paths": [
+        "_regression\\predictions\\826_6001-3_(6.00-9.00)_W_1788890262148_detected_box.jpg"
+      ],
+      "bbox_path": "_regression\\bbox_crops\\826_6001-3_(6.00-9.00)_W_1788890262148.jpg",
+      "crop_path": "_regression\\crops\\826_6001-3_(6.00-9.00)_W_1788890262148.jpg",
+      "primary_success": true,
+      "primary_confidence": 0.8883,
+      "primary_reason": "three_cell_box_with_ruler",
+      "primary_ruler_found": true,
+      "baseline_success": true,
+      "baseline_confidence": 0.8883,
+      "baseline_reason": "three_cell_box_with_ruler",
+      "baseline_ruler_found": true,
+      "regression": false,
+      "primary_target_iou": null,
+      "baseline_target_iou": null,
+      "primary_ms": 12464.4,
+      "baseline_ms": 12515.2
+    }
+  ]
+}
